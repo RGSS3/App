@@ -1,6 +1,7 @@
 require 'json'
 require 'ostruct'
 require 'applib/render'
+require 'FileUtils'
 
 class App
   Default = {
@@ -25,12 +26,23 @@ class App
     end
     system "nw #@dir"
   end
+  
+  def zip
+    open("package.json", "w") do |f|
+       f.write JSON.dump @config.to_h
+    end
+    system "cd #@dir & 7z a -r ../#@dir.zip * & cd .. & nw #@dir.zip"
+  end
 
   def index(a)
      open("index.html", "w") do |f| f.write a end
   end
 
-
+  def asset(a, b)
+     FileUtils.mkdir_p File.join(@dir, File.dirname(a))
+     open(a, 'wb') do |f| f.write b end
+     a
+  end
 
   def config
     @config
