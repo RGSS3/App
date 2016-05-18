@@ -78,6 +78,7 @@ class App
 		when :new then "new " + render_expr([:fcall, *code[1..-1]])
 		when :expr then render_expr code[1]
 		when :binop then "(" + render_expr(code[2]) + ")" + code[1].to_s + "(" + render_expr(code[3]) + ")"
+		when :function then
 		  "(function #{code[1]}(#{code[2].parameters.map{|x| x[-1]}.join(",")}){" + render(Expr.extract(x)) + "})"
 	end
      end
