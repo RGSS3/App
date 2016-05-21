@@ -42,6 +42,13 @@ class App
        x = [:expr, x] if !(Array === x && x[0] == :expr)
        x
     end
+    
+    [:+, :-, :*, :/, :>=, :<=, "==", "!=", ">", "<",
+    "&", "|", ">>", "<<"].each{|x|
+       define_method x do |r|
+         self.class.new [:binop, x, @arr, extract(Expr.from(r))]
+       end 
+    }
 
     def to_js(b = nil, &c)
        JSRenderer.new(to_node, b || c).render
@@ -51,8 +58,8 @@ class App
        self.class.new [:propget, @arr, extract(Expr.from(a))]
     end 
 
-    def []=(a)
-       self.class.new [:propset, @arr, extract(Expr.from(a))]
+    def []=(a, b)
+       self.class.new [:propset, @arr, extract(Expr.from(a)), extract(Expr.from(b))]
     end 
 
     def funcall(*a)
@@ -62,7 +69,9 @@ class App
     def method_missing(sym, *args)
 	if !sym.to_s["="]
 	   self[sym].funcall(*args)	
-	end
+	else
+       self.[]= sym.to_s.chomp("="), *args
+    end 
     end
           
   end
