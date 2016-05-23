@@ -62,7 +62,7 @@ class App
   end
   
   class JSRenderer < BaseRenderer
-     def render_expr(code)
+     def render_expr(code, indent = 0)
 	case code.first
 		when :@frag then code[1].to_s
 		when :undefined, :null, :true, :false then code[0].to_s
@@ -81,6 +81,8 @@ class App
 		when :function then
            x = code[2].call(*code[2].parameters.map{|x| Expr.from(x[-1])})
 		  "(function #{code[1]}(#{code[2].parameters.map{|x| x[-1]}.join(",")}){" + render(Expr.extract(x)) + "})"
+		 when :func then
+		  "(function #{code[1]}(#{code[2].join(",")}){" + code[3].join("\n") + ";})"
 	end
      end
      
@@ -93,7 +95,7 @@ class App
 	  when :if
 	   "#{idt}#{code[1]}(#{code[2]}){\n" + code[3].map{|x| render(x, indent+1) }.join("\n") + "\n#{idt}}else{\n" + code[4].map{|x| render(x, indent+1) }.join("\n") + "\n#{idt}}"
 	  else
-	   "#{idt}#{render_expr code};"
+	   "#{idt}#{render_expr code, indent};"
 	end
      end
   end

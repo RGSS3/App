@@ -11,6 +11,12 @@ class App
         when Symbol  then new [:object, a]
 	when Proc     then new [:function, "", a]
         when Expr then a
+	else 
+		if a.respond_to? :to_expr
+			a.to_expr
+		else
+			nil
+		end
         end
     end
 
@@ -18,8 +24,10 @@ class App
        from :window
     end
 
-
-    def initialize(arr)
+    attr_accessor :id
+    ID = [0]
+    def initialize(arr) 
+	self.id = ID[0] += 1
        @arr = arr
     end
 
@@ -33,7 +41,11 @@ class App
 	  when Array then x.map{|a| extract(a) }
 	  when Hash  then Hash[x.map{|k, v| [extract(k), extract(v)]}]
 	  else
-		  x
+		  if x.respond_to? :inner
+			  x.inner
+		  else
+			  x
+		  end
 	  end
     end
   

@@ -2,7 +2,6 @@ class App
   class Context
      def initialize(arr)
        @arr = arr
-       @index = Hash[@arr.each_with_index{|x, i| [x.hash, i]}]
      end   
 
      def result
@@ -11,14 +10,12 @@ class App
 
      def put(obj)
        @arr.push obj
-       @index[@arr[-1].hash] = @arr.length - 1
        obj
      end       
 
      def extract(obj)
-       if @index.include?(obj.hash)
-         @arr.delete_at @index[obj.hash]
-         @index.delete obj.hash
+       if obj.respond_to?(:id) && (r = @arr.index{|x| x.id == obj.id})
+         @arr.delete_at r
        end
        obj
      end
