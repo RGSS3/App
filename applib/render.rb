@@ -69,33 +69,47 @@ class App
 		when :string then render_stringify(code[1])
 		when :number then code[1].to_s
 		when :object, :method then code[1].to_s
-		when :vcall then render_expr([:fcall, [:object, render_expr(code[1]) + "." + render_expr(code[2])], *code[3..-1]])
-		when :propget then render_expr([:object, render_expr(code[1]) + "." + render_expr(code[2])])
-		when :propset then render_expr([:object, render_expr(code[1]) + "." + render_expr(code[2])]) + "=" + render_expr(code[3])
-		when :fcall then "#{render_expr code[1]}(#{code[2..-1].map{|x| render_expr x}.join(", ")})"
-		when :array then "[#{code[1].map{|x| render_expr x}.join(", ")}]"
-		when :hash then "{#{code[1].map{|k, v| render_expr(k) + ": " + render_expr(v)}.join(", ")}}"
-		when :new then "new " + render_expr([:fcall, *code[1..-1]])
+		when :vcall then render_expr([:fcall, [:object, render_expr(code[1]) + "." + render_expr(code[2], indent + 1)], *code[3..-1]])
+		when :propget then render_expr([:object, render_expr(code[1]) + "." + render_expr(code[2], indent + 1)])
+		when :propset then render_expr([:object, render_expr(code[1]) + "." + render_expr(code[2], indent + 1)]) + "=" + render_expr(code[3])
+		when :fcall then "#{render_expr code[1]}(#{code[2..-1].map{|x| render_expr x, indent}.join(", ")})"
+		when :array then "[#{code[1].map{|x| render_expr x, indent + 1}.join(", ")}]"
+		when :hash then "{#{code[1].map{|k, v| render_expr(k, indent + 1) + ": " + render_expr(v, indent + 1)}.join(", ")}}"
+		when :new then "new " + render_expr([:fcall, *code[1..-1]], indent + 1)
 		when :expr then render_expr code[1]
-		when :binop then "(" + render_expr(code[2]) + ")" + code[1].to_s + "(" + render_expr(code[3]) + ")"
+		when :binop then "(" + render_expr(code[2], indent + 1) + ")" + code[1].to_s + "(" + render_expr(code[3], indent + 1) + ")"
 		when :function then
            x = code[2].call(*code[2].parameters.map{|x| Expr.from(x[-1])})
 		  "(function #{code[1]}(#{code[2].parameters.map{|x| x[-1]}.join(",")}){" + render(Expr.extract(x)) + "})"
 		 when :func then
-		  "(function #{code[1]}(#{code[2].join(",")}){" + code[3].join("\n") + ";})"
+		  "(function #{code[1]}(#{code[2].join(",")}){\n" + render([:@fragments, code[3]], indent + 1) + "\n#{" "*(indent * 4)};})"
+                             when :if then
+                                ret = "#{" "*(indent * 4)}if(#{render_expr(code[1], indent + 1)}){\n" + render([:@fragments, code[2]], indent + 1) + "\n#{" "*(indent * 4)}}"
+                                ret << "else{\n" + render([:@fragments, code[3]], indent + 1) + "\n#{" "*(indent * 4)}}"   if code[3]
+                                ret
+                             when :ret then
+                               "return (" + render_expr(code[1], indent) + ")"
+                             when :var then
+                               ret = "var " + code[1]
+                               ret << " = " << render_expr(code[2], indent + 1) if code.length > 2
+                               ret 
+                             when :gvar then
+                               ret = "window." + code[1]
+                               ret << " = " << render_expr(code[2], indent + 1) if code.length > 2
+                               ret 
 	end
      end
      
-     def render(code = @code, indent = 0)
+     def render(code = @code, indent = 0) 
 	idt = " " * (indent * 4)
 	code = @rewriter.call(code, indent) if @rewriter
 	case code.first
 	  when :block
 	    "#{idt}#{code[1]}(#{code[2]}){\n" + code[3].map{|x| render(x, indent+1) }.join("\n") + "\n#{idt}}"
-	  when :if
-	   "#{idt}#{code[1]}(#{code[2]}){\n" + code[3].map{|x| render(x, indent+1) }.join("\n") + "\n#{idt}}else{\n" + code[4].map{|x| render(x, indent+1) }.join("\n") + "\n#{idt}}"
+          when :@fragments
+                  code[1].map{|x| render(x, indent) }.join(";\n")
 	  else
-	   "#{idt}#{render_expr code, indent};"
+	   "#{idt}#{render_expr code, indent}"
 	end
      end
   end

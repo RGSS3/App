@@ -1,5 +1,6 @@
 class App  
   class Context
+     attr_accessor :arr
      def initialize(arr)
        @arr = arr
      end   

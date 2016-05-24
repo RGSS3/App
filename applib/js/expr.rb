@@ -9,7 +9,7 @@ class App
         when Array     then new  [:array, a.map{|x| extract(self.from(x))}]
         when Hash     then new  [:hash, Hash[a.map{|k, v| [extract(self.from(k)), extract(self.from(v))]}]]
         when Symbol  then new [:object, a]
-	when Proc     then new [:function, "", a]
+        when Proc     then new [:function, "", a]
         when Expr then a
 	else 
 		if a.respond_to? :to_expr
@@ -55,10 +55,13 @@ class App
        x
     end
     
-    [:+, :-, :*, :/, :>=, :<=, "==", "!=", ">", "<",
-    "&", "|", ">>", "<<"].each{|x|
+   def binop(a, b)
+       self.class.new [:binop, a, @arr, extract(Expr.from(b))]
+   end
+
+    [:+, :-, :*, :/, :>=, :<=, "==", "!=", ">", "<", "&", "|", ">>", "<<"].each{|x|
        define_method x do |r|
-         self.class.new [:binop, x, @arr, extract(Expr.from(r))]
+           binop x, r
        end 
     }
 
@@ -76,6 +79,10 @@ class App
 
     def funcall(*a)
        self.class.new [:fcall, @arr, *a.map{|x| extract(Expr.from(x))}]
+    end
+    
+    def to_frag
+	@arr
     end
     
     def method_missing(sym, *args)
