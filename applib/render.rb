@@ -2,6 +2,9 @@ class App
   def html(a, b = nil, &c)
       index HTMLRenderer.new(a, b || c).render
   end
+  def page(p)
+    html p.to_frag
+  end
   
    class BaseRenderer
      def initialize(code, rewriter)
